@@ -9,6 +9,10 @@ import LoginForm from "@/components/LoginForm";
 import Dashboard from "@/pages/Dashboard";
 import SubmitGrievance from "@/pages/SubmitGrievance";
 import GrievancesPage from "@/pages/GrievancesPage";
+import Profile from "@/pages/Profile";
+import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminGrievances from "@/pages/AdminGrievances";
+import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +55,26 @@ const AppRoutes = () => {
       <Route path="/grievances" element={
         <ProtectedRoute>
           <GrievancesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/analytics" element={
+        <ProtectedRoute>
+          <AdminAnalytics />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/grievances" element={
+        <ProtectedRoute>
+          <AdminGrievances />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/settings" element={
+        <ProtectedRoute>
+          <AdminSettings />
         </ProtectedRoute>
       } />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

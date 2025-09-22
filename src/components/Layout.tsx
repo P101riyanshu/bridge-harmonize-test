@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import NotificationCenter from '@/components/NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -142,6 +143,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </h1>
           </div>
           <div className="flex items-center gap-x-4 lg:gap-x-6">
+            <NotificationCenter />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
