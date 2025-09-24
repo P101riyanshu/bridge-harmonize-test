@@ -12,7 +12,11 @@ import {
   LogOut,
   Menu,
   X,
-  Shield
+  Shield,
+  Eye,
+  Search,
+  Phone,
+  HelpCircle
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -40,6 +44,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Submit Grievance', href: '/submit', icon: PlusCircle },
     { name: 'My Grievances', href: '/grievances', icon: FileText },
+    { name: 'Track Grievance', href: '/track', icon: Search },
+    { name: 'Public Grievances', href: '/public', icon: Eye },
+    { name: 'Emergency Services', href: '/emergency', icon: Phone },
+    { name: 'Help Center', href: '/help', icon: HelpCircle },
     ...(user?.role === 'admin' || user?.role === 'department' ? [
       { name: 'All Grievances', href: '/admin/grievances', icon: FileText },
       { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

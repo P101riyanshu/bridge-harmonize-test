@@ -13,6 +13,10 @@ import Profile from "@/pages/Profile";
 import AdminAnalytics from "@/pages/AdminAnalytics";
 import AdminGrievances from "@/pages/AdminGrievances";
 import AdminSettings from "@/pages/AdminSettings";
+import PublicGrievances from "@/pages/PublicGrievances";
+import GrievanceTracker from "@/pages/GrievanceTracker";
+import Emergency from "@/pages/Emergency";
+import HelpCenter from "@/pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +81,10 @@ const AppRoutes = () => {
           <AdminSettings />
         </ProtectedRoute>
       } />
+      <Route path="/public" element={<PublicGrievances />} />
+      <Route path="/track" element={<GrievanceTracker />} />
+      <Route path="/emergency" element={<Emergency />} />
+      <Route path="/help" element={<HelpCenter />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
