@@ -1,292 +1,292 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
-  FileText, 
-  Clock, 
+  BarChart3, 
+  Users, 
+  AlertTriangle, 
   CheckCircle, 
-  AlertTriangle,
+  Clock,
   TrendingUp,
+  FileText,
+  Settings,
   Plus,
-  Eye,
-  BarChart3
+  Moon,
+  Sun
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { StatisticsCard } from '@/components/dashboard/StatisticsCard';
+import { DashboardWidget } from '@/components/dashboard/DashboardWidget';
+import { AdvancedSearch } from '@/components/enhanced/AdvancedSearch';
+import { StatusTimeline } from '@/components/enhanced/StatusTimeline';
+import { RealTimeNotifications } from '@/components/enhanced/RealTimeNotifications';
+import { Button } from '@/components/ui/button';
 
-interface DashboardStats {
-  totalGrievances: number;
-  pendingGrievances: number;
-  resolvedGrievances: number;
-  averageResolutionTime: number;
-}
-
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalGrievances: 0,
-    pendingGrievances: 0,
-    resolvedGrievances: 0,
-    averageResolutionTime: 0,
+  const { theme, toggleTheme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilters, setSearchFilters] = useState<Record<string, string[]>>({});
+  const [dashboardData, setDashboardData] = useState({
+    totalGrievances: 1247,
+    activeGrievances: 89,
+    resolvedToday: 23,
+    averageResolutionTime: 4.2
   });
-  const [recentGrievances, setRecentGrievances] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load recent grievances
-      const grievancesResponse = await api.getGrievances({
-        limit: 5,
-        ...(user?.role === 'citizen' ? { citizenId: user.id } : {}),
-      });
-
-      if (grievancesResponse.success && grievancesResponse.data) {
-        setRecentGrievances(grievancesResponse.data.grievances);
-        
-        // Calculate stats from the grievances
-        const grievances = grievancesResponse.data.grievances;
-        const pending = grievances.filter(g => g.status === 'pending').length;
-        const resolved = grievances.filter(g => g.status === 'resolved').length;
-        
-        setStats({
-          totalGrievances: grievances.length,
-          pendingGrievances: pending,
-          resolvedGrievances: resolved,
-          averageResolutionTime: 3.5, // Mock data
-        });
-      }
-
-      // For admins, load additional analytics
-      if (user?.role === 'admin') {
-        const analyticsResponse = await api.getAnalytics();
-        if (analyticsResponse.success && analyticsResponse.data) {
-          setStats(analyticsResponse.data);
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Error loading dashboard",
-        description: "Failed to load dashboard data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  // Mock data for timeline
+  const grievanceTimeline = [
+    {
+      id: '1',
+      title: 'Grievance Submitted',
+      description: 'New grievance submitted by citizen',
+      status: 'completed' as const,
+      timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '2', 
+      title: 'Under Review',
+      description: 'Grievance assigned to department for review',
+      status: 'completed' as const,
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '3',
+      title: 'In Progress',
+      description: 'Department working on resolution',
+      status: 'current' as const,
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '4',
+      title: 'Resolution',
+      description: 'Final resolution and closure',
+      status: 'pending' as const
     }
+  ];
+
+  const searchFilters_config = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: ['Pending', 'In Progress', 'Resolved', 'Rejected']
+    },
+    {
+      key: 'department',
+      label: 'Department', 
+      options: ['Public Works', 'Health', 'Education', 'Transport']
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      options: ['High', 'Medium', 'Low', 'Urgent']
+    }
+  ];
+
+  const handleSearch = (query: string, filters: Record<string, string[]>) => {
+    setSearchQuery(query);
+    setSearchFilters(filters);
+    console.log('Search:', query, filters);
   };
 
-  const StatCard: React.FC<{
-    title: string;
-    value: string | number;
-    icon: React.ElementType;
-    description?: string;
-    color?: string;
-  }> = ({ title, value, icon: Icon, description, color = "text-primary" }) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { color: 'bg-warning text-warning-foreground', label: 'Pending' },
-      in_progress: { color: 'bg-primary text-primary-foreground', label: 'In Progress' },
-      resolved: { color: 'bg-success text-success-foreground', label: 'Resolved' },
-      rejected: { color: 'bg-destructive text-destructive-foreground', label: 'Rejected' },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return (
-      <Badge className={config.color}>
-        {config.label}
-      </Badge>
-    );
+  const refreshWidget = async () => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setDashboardData(prev => ({
+      ...prev,
+      totalGrievances: prev.totalGrievances + Math.floor(Math.random() * 5),
+      resolvedToday: prev.resolvedToday + Math.floor(Math.random() * 3)
+    }));
   };
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <div className="h-4 bg-muted rounded animate-pulse" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded animate-pulse" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Welcome Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, {user?.name}!
-          </h1>
-          <p className="text-muted-foreground">
-            {user?.role === 'citizen' 
-              ? 'Track and manage your grievances' 
-              : user?.role === 'admin'
-              ? 'Monitor and manage all civic grievances'
-              : 'Handle assigned grievances for your department'
-            }
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <Link to="/submit">
-            <Button className="gradient-primary shadow-primary">
-              <Plus className="mr-2 h-4 w-4" />
-              Submit New Grievance
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Grievances"
-          value={stats.totalGrievances}
-          icon={FileText}
-          description="All time submissions"
-        />
-        <StatCard
-          title="Pending"
-          value={stats.pendingGrievances}
-          icon={Clock}
-          description="Awaiting action"
-          color="text-warning"
-        />
-        <StatCard
-          title="Resolved"
-          value={stats.resolvedGrievances}
-          icon={CheckCircle}
-          description="Successfully resolved"
-          color="text-success"
-        />
-        <StatCard
-          title="Avg. Resolution"
-          value={`${stats.averageResolutionTime} days`}
-          icon={TrendingUp}
-          description="Average time to resolve"
-          color="text-primary"
-        />
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/submit">
-              <Button variant="outline" className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-white/20 dark:border-slate-700/50 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                Welcome back, {user?.name || 'User'}! 👋
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 mt-1">
+                Here's what's happening with your grievances today.
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="p-2"
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <RealTimeNotifications />
+              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
                 New Grievance
               </Button>
-            </Link>
-            <Link to="/grievances">
-              <Button variant="outline" className="w-full">
-                <FileText className="mr-2 h-4 w-4" />
-                {user?.role === 'citizen' ? 'My Grievances' : 'All Grievances'}
-              </Button>
-            </Link>
-            {(user?.role === 'admin' || user?.role === 'department') && (
-              <>
-                <Link to="/admin/grievances">
-                  <Button variant="outline" className="w-full">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Review Pending
-                  </Button>
-                </Link>
-                <Link to="/admin/analytics">
-                  <Button variant="outline" className="w-full">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    View Analytics
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Grievances */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Recent Grievances</CardTitle>
-            <Link to="/grievances">
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recentGrievances.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No grievances found</p>
-              <p className="text-sm">Submit your first grievance to get started</p>
             </div>
-          ) : (
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Section */}
+        <div className="mb-8">
+          <AdvancedSearch
+            onSearch={handleSearch}
+            filters={searchFilters_config}
+            placeholder="Search grievances, departments, or citizens..."
+          />
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatisticsCard
+            title="Total Grievances"
+            value={dashboardData.totalGrievances}
+            icon={FileText}
+            trend={12}
+            color="blue"
+            delay={0}
+          />
+          <StatisticsCard
+            title="Active Cases"
+            value={dashboardData.activeGrievances}
+            icon={Clock}
+            trend={-5}
+            color="orange"
+            delay={100}
+          />
+          <StatisticsCard
+            title="Resolved Today"
+            value={dashboardData.resolvedToday}
+            icon={CheckCircle}
+            trend={23}
+            color="green"
+            delay={200}
+          />
+          <StatisticsCard
+            title="Avg. Resolution Time"
+            value={`${dashboardData.averageResolutionTime} days`}
+            icon={TrendingUp}
+            trend={-15}
+            color="purple"
+            delay={300}
+          />
+        </div>
+
+        {/* Dashboard Widgets Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Recent Activities Widget */}
+          <DashboardWidget
+            title="Recent Activities"
+            refreshable
+            expandable
+            onRefresh={refreshWidget}
+            delay={400}
+            className="lg:col-span-2"
+          >
             <div className="space-y-4">
-              {recentGrievances.slice(0, 5).map((grievance) => (
-                <div
-                  key={grievance.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:shadow-card transition-shadow"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium truncate">{grievance.title}</h4>
-                      {getStatusBadge(grievance.status)}
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>ID: {grievance.id.slice(0, 8)}</span>
-                      <span>{grievance.category}</span>
-                      <span>{grievance.department}</span>
-                    </div>
+              {[
+                { action: 'New grievance submitted', time: '2 minutes ago', type: 'info' },
+                { action: 'Grievance #GRV-001 resolved', time: '15 minutes ago', type: 'success' },
+                { action: 'Department response overdue', time: '1 hour ago', type: 'warning' },
+                { action: 'System maintenance completed', time: '2 hours ago', type: 'info' }
+              ].map((activity, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover-lift">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.type === 'success' ? 'bg-green-500' :
+                    activity.type === 'warning' ? 'bg-orange-500' :
+                    'bg-blue-500'
+                  }`}></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {activity.action}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {activity.time}
+                    </p>
                   </div>
-                  <Link to={`/grievances/${grievance.id}`}>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </DashboardWidget>
+
+          {/* Grievance Status Timeline */}
+          <DashboardWidget
+            title="Sample Grievance Progress"
+            delay={500}
+          >
+            <StatusTimeline steps={grievanceTimeline} />
+          </DashboardWidget>
+        </div>
+
+        {/* Charts and Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Mock Chart Widget */}
+          <DashboardWidget
+            title="Grievances by Department"
+            refreshable
+            expandable
+            onRefresh={refreshWidget}
+            delay={600}
+          >
+            <div className="space-y-4">
+              {[
+                { dept: 'Public Works', count: 45, color: 'bg-blue-500' },
+                { dept: 'Health', count: 32, color: 'bg-green-500' },
+                { dept: 'Education', count: 28, color: 'bg-purple-500' },
+                { dept: 'Transport', count: 18, color: 'bg-orange-500' }
+              ].map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded ${item.color}`}></div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {item.dept}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${item.color}`}
+                        style={{ width: `${(item.count / 45) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white w-8">
+                      {item.count}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DashboardWidget>
+
+          {/* Quick Actions Widget */}
+          <DashboardWidget
+            title="Quick Actions"
+            delay={700}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'New Grievance', icon: Plus, color: 'bg-blue-500' },
+                { label: 'View All', icon: FileText, color: 'bg-green-500' },
+                { label: 'Analytics', icon: BarChart3, color: 'bg-purple-500' },
+                { label: 'Settings', icon: Settings, color: 'bg-orange-500' }
+              ].map((action, index) => (
+                <button
+                  key={index}
+                  className={`p-4 rounded-lg ${action.color} text-white hover:scale-105 transition-transform duration-200 flex flex-col items-center space-y-2`}
+                >
+                  <action.icon className="h-6 w-6" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </DashboardWidget>
+        </div>
+      </div>
     </div>
   );
 };
